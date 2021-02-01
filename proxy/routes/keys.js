@@ -11,13 +11,23 @@ const pool = new Pool({
   port: process.env.PG_PORT
 });
 
-/* GET keys listing. */
-router.get('/', function(req, res, next) {
+const isValidUser = (req, res, next) => {
   const userId = req.cookies.user_id;
 
-  if (!userId) {
-    return res.status(401).send();
-  }
+  if (userId === undefined) return res.status(404).send();
+
+  pool.query('SELECT * FROM users WHERE id = $1', [req.cookies.user_id], (e, r) => {
+    if (e || r.rows.length < 1) {
+      return res.status(404).send();
+    }
+
+    return next();
+  });
+};
+
+/* GET keys listing. */
+router.get('/', isValidUser, function(req, res, next) {
+  const userId = req.cookies.user_id;
 
   const data = {
     keys: null,
@@ -26,7 +36,8 @@ router.get('/', function(req, res, next) {
 
   pool.query('SELECT * FROM keys WHERE user_id = $1', [req.cookies.user_id], (err, results) => {
     if (err) {
-      throw err;
+      console.log(err);
+      return res.status(404).send();
     }
 
     data.keys = results.rows;
@@ -37,7 +48,8 @@ router.get('/', function(req, res, next) {
 
     pool.query('SELECT * FROM requests', [], (errTwo, resultsTwo) => {
       if (errTwo) {
-        throw errTwo;
+        console.log(errTwo)
+        return res.status(404).send();
       }
 
       resultsTwo.rows.forEach(function(row) {
@@ -52,12 +64,8 @@ router.get('/', function(req, res, next) {
 });
 
 /* POST create key */
-router.post('/', function(req, res, next) {
+router.post('/', isValidUser, function(req, res, next) {
   const userId = req.cookies.user_id;
-
-  if (!userId) {
-    return res.status(401).send();
-  }
 
   pool.query('INSERT INTO keys (value, user_id) VALUES ($1, $2)', [req.body.apiKey, req.cookies.user_id], (err, results) => {
     if (err) {
@@ -69,14 +77,10 @@ router.post('/', function(req, res, next) {
 });
 
 /* PUT disable key */
-router.put('/disable', function(req, res, next) {
+router.put('/disable', isValidUser, function(req, res, next) {
   const userId = req.cookies.user_id;
 
-  if (!userId) {
-    return res.status(401).send();
-  }
-
-  pool.query('UPDATE keys SET enabled = $1 WHERE value = $2', [false, req.body.apiKey], (err, results) => {
+  pool.query('UPDATE keys SET enabled = $1 WHERE id = $2 AND user_id = $3', [false, req.body.keyId, req.cookies.user_id], (err, results) => {
     if (err) {
       throw err;
     }
@@ -96,8 +100,9 @@ router.post('/validate', function(req, res, next) {
 
     const { id } = results.rows[0];
     const requestUri = req.get('X-Original-URI');
+    const bytes = Math.round(req.get('Content-Length'));
 
-    pool.query('INSERT INTO requests (key_id, location) VALUES ($1, $2)', [id, requestUri], (errTwo, resultsTwo) => {
+    pool.query('INSERT INTO requests (key_id, location, bytes) VALUES ($1, $2, $3)', [id, requestUri, bytes], (errTwo, resultsTwo) => {
       if (errTwo) {
         return res.send(401);
       }

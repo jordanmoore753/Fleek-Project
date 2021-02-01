@@ -25,7 +25,7 @@ router.post('/login', function(req, res, next) {
     bcrypt.compare(req.body.password, results.rows[0].password_digest)
     .then((response) => {
       if (response) {
-        res.cookie('user_id', results.rows[0].id);
+        res.cookie('user_id', results.rows[0].id, { httpOnly: false, path: '/' });
         return res.status(200).send();
       }
         
@@ -49,15 +49,28 @@ router.post('/register', function(req, res, next) {
     }
 
     bcrypt.hash(req.body.password, 10).then((hash) => {
-      pool.query('INSERT INTO users(email, password_digest) VALUES ($1, $2)', [req.body.email, hash], (err, results) => {
+      pool.query('INSERT INTO users(email, password_digest) VALUES ($1, $2)', [req.body.email, hash], (error, resultsTwo) => {
         if (err) {
           return res.status(500).send();
         }
 
-        return res.status(200).send();
+        pool.query('SELECT * FROM users WHERE email = $1', [req.body.email], (errThree, resultsThree) => {
+          if (errThree) {
+            return res.status(500).send();
+          }
+
+          res.cookie('user_id', resultsThree.rows[0].id, { httpOnly: false, path: '/' });
+          return res.status(200).send();
+        });
       });
     });
   });
+});
+
+/* DELETE logout */
+router.delete('/logout', function(req, res, next) {
+  res.cookie('user_id', '', { expires: new Date(0) });
+  return res.status(200).send();
 });
 
 module.exports = router;

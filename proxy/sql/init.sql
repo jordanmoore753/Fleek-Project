@@ -15,5 +15,6 @@ CREATE TABLE requests (
   request_id serial PRIMARY KEY,
   key_id integer REFERENCES keys(id),
   created_at TIMESTAMP DEFAULT now(),
+  bytes integer,
   location text
 );

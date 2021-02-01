@@ -1,6 +1,6 @@
 FROM node:10
 
-WORKDIR /app
+WORKDIR /proxy
 
 COPY ./package.json .
 COPY ./package-lock.json .

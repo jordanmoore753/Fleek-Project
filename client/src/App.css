@@ -1,5 +1,13 @@
 .App {
   text-align: center;
+  margin: 100px 0;
+}
+
+html {
+  background-color: #51B4F4;
+  background-image: linear-gradient(#51B4F4, white);
+  padding: 30px 100px;
+  min-height: 100vh;
 }
 
 .App-logo {
@@ -35,4 +43,38 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.main-dash {
+  text-align: left;
+}
+
+.is-disabled {
+  background-color: whitesmoke;
+}
+
+.list-item {
+  list-style-type: square;
+  margin-left: 20px;
+  margin: 10px 0 10px 20px;
+}
+
+.api-key {
+  background-color: lightblue;
+  color: black;
+  padding: 22px;
+  margin: 10px 0;
+  border-radius: 3px;
+}
+
+.inline-btn {
+  float: right;
+}
+
+.disabled-api-key {
+  background-color: lightgray;
+  padding: 22px;
+  margin: 10px 0;
+  color: black;
+  border-radius: 3px;
 }
